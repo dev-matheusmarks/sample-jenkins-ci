@@ -13,15 +13,6 @@ pipeline {
       }
     }
 
-    stage('Test Docker Access') {
-      steps {
-        sh 'id'
-        sh 'echo "DOCKER_HOST=${DOCKER_HOST:-<unset>}"'
-        sh 'ls -l /run/user/1000/docker.sock || true'
-        sh 'docker version'
-      }
-    }
-
     stage('Build') {
       steps {
         sh 'make build'
@@ -43,7 +34,13 @@ pipeline {
 
   post {
     always {
-      sh 'docker images | head -n 20 || true'
+      script {
+        if (isUnix()) {
+          sh 'docker images | head -n 20 || true'
+        } else {
+          bat 'docker images | findstr /V "^$" || exit /b 0'
+        }
+      }
     }
   }
 }
